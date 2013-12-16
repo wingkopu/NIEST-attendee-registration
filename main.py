@@ -1,6 +1,7 @@
 import serial,time,sys,ntpath,os,subprocess,threading,binascii,sqlite3
 from shutil import *
 from FP import *
+from zipfile import *
 
 class Connector:
     inq=""
@@ -62,48 +63,26 @@ class Connector:
                         self.pkt._LENGTH=self.pktstr
                         self.pktstr=""
                         self.bytecount=self.pkt.toInt(self.pkt._LENGTH)
-                        cmd=self.pkt.toInt(self.pkt._CMD)
-                        if cmd==1:
-                            self.param=[self.bytecount]
-                            self.bytecount=self.param[0]
-                        elif cmd==2:
-                            self.param=[self.bytecount]
-                            self.bytecount=self.param[0]
-                        elif cmd==4:
-                            self.param=[self.bytecount]
-                            self.bytecount=self.param[0]
-                        elif cmd==5:
-                            self.param=[self.bytecount]
-                            self.bytecount=self.param[0]
-                        elif cmd==7:
-                            self.param=[21,self.bytecount-21]
-                            self.bytecount=self.param[0]
                         if self.bytecount==0:
                             self.state=6
                             self.bytecount=4
                         else:
                             self.state=5
                 elif self.state==5:
-                    try:
-                        self.f.write(tmp)
-                    except:
-                        self.pktstr=self.pktstr+tmp
+                    self.pktstr=self.pktstr+tmp
                     self.bytecount=self.bytecount-1
-                    if self.bytecount<=0:
-                        self.param.pop(0)
-                        if len(self.param)>0:
-                            self.pkt._DATA=self.pktstr[0:20]
-                            self.pkt._DATA=self.pkt._DATA.strip()
-                            self.bytecount=self.param[0]
-                            #write file
-                            self.f=open(self.pkt._DATA,'wb')
-                        else:
-                            try:
-                                self.f.close()
-                            except:
-                                pass
-                            self.state=6
-                            self.bytecount=4
+
+                    cmd=self.pkt.toInt(self.pkt._CMD)
+                    if cmd==7 and self.bytecount+20==self.pkt.toInt(self.pkt._LENGTH):
+                        self.pkt._DATA=self.pktstr.strip()
+                        self.state=10
+                        self.pktstr=""
+                        f=open(self.pkt._DATA,'wb')
+                        
+                    elif self.bytecount<=0:
+                        self.pkt._DATA=self.pktstr
+                        self.state=6
+                        self.bytecount=4
                         self.pktstr=""
                 elif self.state==6:
                     self.pktstr=self.pktstr+tmp
@@ -116,6 +95,15 @@ class Connector:
                 elif self.state==7 and tmp=='\n':
                     self.state=0
                     self.ExecuteCMD()
+                elif self.state==10:#read bianary state
+                    f.write(tmp)
+                    time.sleep(0.005)
+                    self.bytecount-=1
+                    if self.bytecount==0:
+                       f.close()
+                       self.bytecount=4
+                       self.state=6
+                       
                 else:
                     self.state=0
                     self.bytecount=0
@@ -228,33 +216,10 @@ class Connector:
         self.send(pkt)
 
     def uploadFP(self,filename):
-        result=os.system("unzip -f "+filename)
-        if result==0:
-            con=sqlite3.connect("NIETS.sqlite")
-            cur=con.cursor()
-            cur.execute("select count(citizenid) from User")
-            out=cur.fetchone()
-            numberofrow=out[0]
-            cur.execute("select * from User")
-            data=cur.fetchall()
-            cur.close()
-            con.close()
-
-            if os.path.exists("/root/db/NIETS.sqlite"):
-                try:
-                    con=sqlite3.connect('/root/db/NIETS.sqlite')
-                    cur=con.cursor()
-                    cur.executemany("INSERT INTO User VALUES(?,?,?)",data)
-                    con.commit()
-                    cur.close()
-                    con.close()
-                except sqlite3.Error,e:
-                    print "Error %s:" % e.args[0]
-                    numberofrow=-1
-            else:
-                copyfile('NIETS.sqlite','db/NIETS.sqlite')
-        else:
-            numberofrow=-1
+        #result=os.system("unzip -u -qq "+filename+" -d db")
+        z=ZipFile(filename)
+        numberofrow=len(z.filelist)
+        z.extractall('db/')
 
         p=Packet()
         tid=self.pkt.toInt(self.pkt._TID)+1
@@ -285,6 +250,13 @@ class Connector:
         timetoretry=20
 
         fps=FPS('/dev/ttyUSB1',9600)
+        fps.initiate()
+
+        ChangeBaudrate(fps)
+
+        fps.close()
+
+        fps.baudrate=115200
         fps.initiate()
 
         #print 'open'
@@ -330,18 +302,20 @@ class Connector:
         CMOSLED(fps,0)
 
         result=CloseCMD(fps)
-        #fps.close()
 
+        ChangeBaudrate(fps,9600)
 
-        #filename=filename.strip(' \t\n\r')
-        #if os.path.exists(filename):
-        #    with open(filename,'rb') as fi:
-        #        content=fi.read()
-        #    content=chr(0)+content
-        #else:
-        #    content=1
-
+        fps.close()
         content=chr(0)+finger
+
+##        filename=filename.strip(' \t\n\r')
+##        if os.path.exists(filename):
+##            with open(filename,'rb') as fi:
+##                content=fi.read()
+##            content=chr(1)+content
+##        else:
+##            content=0
+
         p=Packet()
         tid=self.pkt.toInt(self.pkt._TID)+1
         p._TID+=chr((tid>>24)&0b11111111)

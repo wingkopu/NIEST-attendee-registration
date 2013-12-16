@@ -5,6 +5,13 @@ timetoretry=20
 fps=FPS('/dev/ttyUSB1',9600)
 fps.initiate()
 
+ChangeBaudrate(fps)
+
+fps.close()
+
+fps.baudrate=115200
+fps.initiate()
+
 #print 'open'
 result=OpenCMD(fps)
 #print 'enroll start'
@@ -48,7 +55,10 @@ finger=Enroll3(fps,1)
 CMOSLED(fps,0)
 
 result=CloseCMD(fps)
-#fps.close()
+
+ChangeBaudrate(fps,9600)
+
+fps.close()
 
 efilename='temp/enrolltemplate'
 f=open(efilename,'wb')

@@ -31,11 +31,20 @@ class Connector:
     def send(self,msg):
         self.serial.write(msg)
 
+with open('20131215180343.zip','rb') as fi:
+        content=fi.read()
+
 head=chr(85)+chr(170)
 tid=chr(0)+chr(0)+chr(0)+chr(0)
-cmd=chr(0)+chr(4)
-length=chr(0)+chr(0)+chr(0)+chr(1)
-data="a"
+cmd=chr(0)+chr(7)
+data="a.zip               "+content
+
+leng=len(data)
+length=""
+length+=chr((leng>>24)&0b11111111)
+length+=chr((leng>>16)&0b11111111)
+length+=chr((leng>>8)&0b11111111)
+length+=chr((leng)&0b11111111)
 
 crc=binascii.crc32(tid+cmd+length+data)
 crc1=chr((crc>>24)&0b11111111)
