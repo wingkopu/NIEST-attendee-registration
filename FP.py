@@ -70,8 +70,11 @@ class FPS:
         p._DeviceID=chr(1)+chr(0)
         p._Data=data
         p.checksum()
+        
         pkt=p.pack()
         for c in pkt:
+            print c
+            self.serial.flush()
             self.serial.write(c)
     
     def close(self):
@@ -133,11 +136,11 @@ class DataPacket(Packet):
     packet=""
 
     def checksum(self):
-        data=chr(0x5A)+chr(0xA5)+self._DeviceID+self._Param+self._Data
+        data=chr(0x5A)+chr(0xA5)+self._DeviceID+self._Data
         cs=0
         for i in data:
             cs+=ord(i)
-        self._CHECKSUM=self.toByte(cs,2)
+        self._CHECKSUM=Convert.toByte(cs,2)
 
     def decode(self,datatype):
         self._Device=self.packet[2:4]
@@ -146,7 +149,7 @@ class DataPacket(Packet):
         
         
     def pack(self):
-        return chr(0x55)+chr(0xAA)+self._DeviceID+self._Param+self._Data+self._CHECKSUM
+        return chr(0x5A)+chr(0xA5)+self._DeviceID+self._Data+self._CHECKSUM
 
 def OpenCMD(fps,getinfo=False):
     if not getinfo:
@@ -213,8 +216,8 @@ def Enroll3(fps,r):
     else:
         return ack
 
-def GetRawImage(fps):
-    fps.sendCMD(0,0x63)
+def GetImage(fps):
+    fps.sendCMD(0,0x62)
     result=fps.readAck()
     if result._Resp==DataType.ACK:
         result=fps.readData(DataType.RAWIMAGESIZE)
@@ -229,9 +232,25 @@ def ChangeBaudrate(fps,rate=115200):
 def SetTemplate(fps,ID,template):
     fps.sendCMD(ID,0x71)
     result=fps.readAck()
+    print Convert.toInt(result._Param)
     fps.sendData(template)
     result=fps.readAck()
-    
+    return Convert.toInt(result._Param)
+
+def Verify(fps,ID):
+    fps.sendCMD(ID,0x50)
+    result=fps.readAck()
+    return Convert.toInt(result._Param)
+
+def DeleteID(fps,ID):
+    fps.sendCMD(ID,0x40)
+    result=fps.readAck()
+    return Convert.toInt(result._Param)
+
+def DeleteAll(fps):
+    fps.sendCMD(0,0x41)
+    result=fps.readAck()
+    return Convert.toInt(result._Resp)
 
 ##timetoretry=20
 ##

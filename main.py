@@ -114,7 +114,7 @@ class Connector:
         	self.serial.write(i)
 		#print count
 		time.sleep(0.008)
-		if count%4096==0:
+		if count%3072==0:
 			time.sleep(0.2)
 		count=count+1
 
@@ -339,8 +339,35 @@ class Connector:
 
         self.send(pkt)
 
-    #def verifyFP(self):
+    def verifyFP(self):
+        cid=self.pkt._DATA
+
+        try:
+            with open(cid+'.txt','rb') as fi:
+                data=fi
+            cidr=data[0:13]
+            template=data[13:511]
+        except:
+            return -1
         
+        fps=FPS('/dev/ttyUSB1',9600)
+        fps.initiate()
+
+        ChangeBaudrate(fps)
+
+        fps.close()
+
+        fps.baudrate=115200
+        fps.initiate()
+
+        result=DeleteID(fps,0)
+        print result
+        result=SetTemplate(fps,0,template)
+        print result
+        result=Verify(fps,0)
+        print result
+
+        fps.close()
         
 class Packet:
     _TID=""

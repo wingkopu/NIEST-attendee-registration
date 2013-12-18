@@ -36,8 +36,8 @@ with open('20131215180343.zip','rb') as fi:
 
 head=chr(85)+chr(170)
 tid=chr(0)+chr(0)+chr(0)+chr(0)
-cmd=chr(0)+chr(7)
-data="a.zip               "+content
+cmd=chr(0)+chr(5)
+data="1100200773078"
 
 leng=len(data)
 length=""
