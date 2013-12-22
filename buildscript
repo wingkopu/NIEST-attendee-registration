@@ -1,0 +1,2 @@
+c++ -o verify lib/verify.cpp lib/OEM.cpp lib/CommBase.cpp lib/sb_protocol_oem.cpp
+c++ -o enroll lib/enroll.cpp lib/OEM.cpp lib/CommBase.cpp lib/sb_protocol_oem.cpp

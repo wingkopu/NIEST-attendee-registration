@@ -20,7 +20,7 @@ class Connector:
             if self.serial.inWaiting()!=0:
                 tmp=self.serial.read()
                 
-                print tmp
+                print ord(tmp)
         
         
 
@@ -36,8 +36,8 @@ with open('20131215180343.zip','rb') as fi:
 
 head=chr(85)+chr(170)
 tid=chr(0)+chr(0)+chr(0)+chr(0)
-cmd=chr(0)+chr(5)
-data="1100200773078"
+cmd=chr(0)+chr(4)
+data="1111111111111"
 
 leng=len(data)
 length=""

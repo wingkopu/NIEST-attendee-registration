@@ -209,7 +209,7 @@ BOOL CCommUSB::SCSI_Open()
 	char deviceName[32];
 	for (int i=0; i<32; i++)
 	{
-		(void) sprintf (deviceName, "/dev/sg%d", i);
+		(void) sprintf (deviceName, "/dev/sr%d", i);
 		m_hDevice = open (deviceName, O_RDWR| O_NONBLOCK | O_NDELAY);
 		if(_commex_check_usb())
 		{

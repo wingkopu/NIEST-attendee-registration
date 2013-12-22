@@ -23,7 +23,7 @@ int gx_hDevice;
 
 devinfo gDevInfo;
 
-double GetTickCount(void)
+extern double GetTickCount(void)
 {
   struct timespec now;
   if (clock_gettime(CLOCK_MONOTONIC, &now))
@@ -33,7 +33,7 @@ double GetTickCount(void)
 }
 
 //////////////////////////////////////////////////////////////////////////
-int oem_CommandRun(WORD wCmd, int nCmdParam)
+extern int oem_CommandRun(WORD wCmd, int nCmdParam)
 {
 	if( oemp_SendCmdOrAck( gwDevID, wCmd, nCmdParam ) < 0 )
 		return OEM_COMM_ERR;
@@ -44,7 +44,7 @@ int oem_CommandRun(WORD wCmd, int nCmdParam)
 	return 0;
 }
 
-int oem_open( void )
+extern int oem_open( void )
 {
 	if (oem_CommandRun( CMD_OPEN, 1 ) < 0 )
 		return OEM_COMM_ERR;

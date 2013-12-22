@@ -40,7 +40,7 @@ int Capturing(BOOL bBest/* = FALSE*/)
 	return -1;
 }
 
-int main (int argc, char **argv)
+int main ()
 {
 		{
 			if( !comm_open_usb() ){

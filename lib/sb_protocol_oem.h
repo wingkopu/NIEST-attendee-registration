@@ -31,10 +31,10 @@ typedef struct {
 #define PKT_CHK_SUM_ERR	PKT_ERR_START+4
 #define PKT_PARAM_ERR	PKT_ERR_START+5
 
-int oemp_CheckCmdAckPkt( WORD wDevID, SB_OEM_PKT* pPkt );
-int oemp_SendCmdOrAck( WORD wDevID, WORD wCmdOrAck, int nParam );
-int oemp_ReceiveCmdOrAck( WORD wDevID, WORD* pwCmdOrAck, int* pnParam );
-int oemp_SendData( WORD wDevID, BYTE* pBuf, int nSize );
-int oemp_ReceiveData( WORD wDevID, BYTE* pBuf, int nSize );
+extern int oemp_CheckCmdAckPkt( WORD wDevID, SB_OEM_PKT* pPkt );
+extern int oemp_SendCmdOrAck( WORD wDevID, WORD wCmdOrAck, int nParam );
+extern int oemp_ReceiveCmdOrAck( WORD wDevID, WORD* pwCmdOrAck, int* pnParam );
+extern int oemp_SendData( WORD wDevID, BYTE* pBuf, int nSize );
+extern int oemp_ReceiveData( WORD wDevID, BYTE* pBuf, int nSize );
 
 #endif /*__SB_PROTOCOL_OEM_H__*/

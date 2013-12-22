@@ -1,7 +1,7 @@
 import serial,time,sys,ntpath,os,subprocess,threading,binascii,sqlite3
 from shutil import *
-from FP import *
 from zipfile import *
+from DeviceScan import *
 
 class Connector:
     inq=""
@@ -126,18 +126,22 @@ class Connector:
         elif cmd==2:
             print "getImage"
             self.plist['camera'].append([subprocess.Popen(["python","console.py"],stdout=subprocess.PIPE),self.imageCP])
+        elif cmd==3:
+            print "getDCInfo"
+            self.getDCInfo()
         elif cmd==4:
             print "enrollFP"
-            #self.plist['fp'].append([subprocess.Popen(["python","enrollFP.py"],stdout=subprocess.PIPE),self.enrollFP])
-            self.enrollFP('')
+            self.plist['fp'].append([subprocess.Popen(["./enroll"],stdout=subprocess.PIPE),self.enrollFP])
+            #self.enrollFP('')
         elif cmd==5:
             print "verifyFP"
-            self.verifyFP()
+	    self.plist['fp'].append([subprocess.Popen(["./verify",self.pkt._DATA],stdout=subprocess.PIPE),self.verifyFP])
+            #self.verifyFP()
         elif cmd==7:
             print "uploadFP"
             self.uploadFP(self.pkt._DATA)
             
-        elif cmd==15:
+        elif cmd==14:
             print "cancel"
             for i in self.plist:
                 for j in self.plist[i]:
@@ -247,74 +251,78 @@ class Connector:
 
     def enrollFP(self,filename):
 
-        timetoretry=20
+        #timetoretry=20
 
-        fps=FPS('/dev/ttyUSB1',9600)
-        fps.initiate()
+        #fps=FPS('/dev/ttyUSB1',9600)
+        #fps.initiate()
 
-        ChangeBaudrate(fps)
+        #ChangeBaudrate(fps)
 
-        fps.close()
+        #fps.close()
 
-        fps.baudrate=115200
-        fps.initiate()
+        #fps.baudrate=115200
+        #fps.initiate()
 
         #print 'open'
-        result=OpenCMD(fps)
+        #result=OpenCMD(fps)
         #print 'enroll start'
-        EnrollStart(fps,-1)
+        #EnrollStart(fps,-1)
         #print 'turn on cmos'
-        CMOSLED(fps,1)
+        #CMOSLED(fps,1)
 
         #print 'try to get'
 
-        count=0
-        while IsPressFinger(fps)!=0:
-            time.sleep(0.5)
-            count+=1
-            if count>timetoretry:
-                break
-        result=CaptureFinger(fps,1)
-        result=Enroll1(fps)
+        #count=0
+        #while IsPressFinger(fps)!=0:
+        #    time.sleep(0.5)
+        #    count+=1
+        #    if count>timetoretry:
+        #        break
+        #result=CaptureFinger(fps,1)
+        #result=Enroll1(fps)
 
-        count=0
-        while IsPressFinger(fps)!=0:
-            time.sleep(0.5)
-            count+=1
-            if count>timetoretry:
-                break
-        result=CaptureFinger(fps,1)
-        result=Enroll2(fps)
+        #count=0
+        #while IsPressFinger(fps)!=0:
+        #    time.sleep(0.5)
+        #    count+=1
+        #    if count>timetoretry:
+        #        break
+        #result=CaptureFinger(fps,1)
+        #result=Enroll2(fps)
 
-        count=0
-        while IsPressFinger(fps)!=0:
-            time.sleep(0.5)
-            count+=1
-            if count>timetoretry:
-                break
-        result=CaptureFinger(fps,1)
-        finger=Enroll3(fps,1)
+        #count=0
+        #while IsPressFinger(fps)!=0:
+        #    time.sleep(0.5)
+        #    count+=1
+        #    if count>timetoretry:
+        #        break
+        #result=CaptureFinger(fps,1)
+        #finger=Enroll3(fps,1)
 
         #rawimage=GetRawImage(fps)
 
         #print len(rawimage)
 
-        CMOSLED(fps,0)
+        #CMOSLED(fps,0)
 
-        result=CloseCMD(fps)
+        #result=CloseCMD(fps)
 
-        ChangeBaudrate(fps,9600)
+        #ChangeBaudrate(fps,9600)
 
-        fps.close()
-        content=chr(0)+finger
+        #fps.close()
 
-##        filename=filename.strip(' \t\n\r')
-##        if os.path.exists(filename):
-##            with open(filename,'rb') as fi:
-##                content=fi.read()
-##            content=chr(1)+content
-##        else:
-##            content=0
+        #content=chr(0)+finger
+
+
+        filename=filename.strip(' \t\n\r')
+	print filename
+	[status,fp]=filename.split(',')
+        if os.path.exists(fp):
+            with open(fp,'rb') as fi:
+                content=fi.read()
+            content=chr(int(status))+content
+        else:
+            content=chr(int(status))
 
         p=Packet()
         tid=self.pkt.toInt(self.pkt._TID)+1
@@ -339,36 +347,64 @@ class Connector:
 
         self.send(pkt)
 
-    def verifyFP(self):
-        cid=self.pkt._DATA
+    def verifyFP(self,result):
+	if result=="p":
+		r=0
+	else:
+		r=1
+	p=Packet()
+	tid=self.pkt.toInt(self.pkt._TID)+1
+	
+        p._TID+=chr((tid>>24)&0b11111111)
+        p._TID+=chr((tid>>16)&0b11111111)
+        p._TID+=chr((tid>>8)&0b11111111)
+        p._TID+=chr((tid)&0b11111111)
+	cmd=5
+        p._CMD=p._CMD+chr((cmd>>8)&0b11111111)
+        p._CMD=p._CMD+chr((cmd)&0b11111111)
+        length=1
+        p._LENGTH=p._LENGTH+chr((length>>24)&0b11111111)
+        p._LENGTH=p._LENGTH+chr((length>>16)&0b11111111)
+        p._LENGTH=p._LENGTH+chr((length>>8)&0b11111111)
+        p._LENGTH=p._LENGTH+chr((length)&0b11111111)
 
-        try:
-            with open(cid+'.txt','rb') as fi:
-                data=fi
-            cidr=data[0:13]
-            template=data[13:511]
-        except:
-            return -1
-        
-        fps=FPS('/dev/ttyUSB1',9600)
-        fps.initiate()
+        p._DATA=chr(r)
 
-        ChangeBaudrate(fps)
+        p.computeCRC()
 
-        fps.close()
+        pkt=p.pack()
 
-        fps.baudrate=115200
-        fps.initiate()
+        self.send(pkt)
 
-        result=DeleteID(fps,0)
-        print result
-        result=SetTemplate(fps,0,template)
-        print result
-        result=Verify(fps,0)
-        print result
+    def getDCInfo(self):
+        ds=DeviceScan()
+        ds.check()
+        result=str(ds)
 
-        fps.close()
-        
+        p=Packet()
+        tid=self.pkt.toInt(self.pkt._TID)+1
+
+        p._TID+=chr((tid>>24)&0b11111111)
+        p._TID+=chr((tid>>16)&0b11111111)
+        p._TID+=chr((tid>>8)&0b11111111)
+        p._TID+=chr((tid)&0b11111111)
+	cmd=3
+        p._CMD=p._CMD+chr((cmd>>8)&0b11111111)
+        p._CMD=p._CMD+chr((cmd)&0b11111111)
+        length=6
+        p._LENGTH=p._LENGTH+chr((length>>24)&0b11111111)
+        p._LENGTH=p._LENGTH+chr((length>>16)&0b11111111)
+        p._LENGTH=p._LENGTH+chr((length>>8)&0b11111111)
+        p._LENGTH=p._LENGTH+chr((length)&0b11111111)
+
+        p._DATA=result
+
+        p.computeCRC()
+
+        pkt=p.pack()
+
+        self.send(pkt)
+
 class Packet:
     _TID=""
     _CMD=""
